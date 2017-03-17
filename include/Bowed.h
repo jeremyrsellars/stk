@@ -92,6 +92,7 @@ class Bowed : public Instrmnt
   BiQuad   bodyFilters_[6];
   SineWave vibrato_;
   ADSR     adsr_;
+  ADSR     adsr_vibrato_;
 
   bool     bowDown_;
   StkFloat maxVelocity_;
@@ -115,10 +116,9 @@ inline StkFloat Bowed :: tick( unsigned int )
   neckDelay_.tick( bridgeReflection + newVelocity);      // Do string propagations
   bridgeDelay_.tick(nutReflection + newVelocity);
     
-  if ( vibratoGain_ > 0.0 )  {
+  vibratoGain_ = adsr_vibrato_.tick() * ONE_OVER_128 / 100.0;
     neckDelay_.setDelay( (baseDelay_ * (1.0 - betaRatio_) ) + 
                          (baseDelay_ * vibratoGain_ * vibrato_.tick()) );
-  }
 
   lastFrame_[0] = 0.1248 * bodyFilters_[5].tick( bodyFilters_[4].tick( bodyFilters_[3].tick( bodyFilters_[2].tick( bodyFilters_[1].tick( bodyFilters_[0].tick( bridgeDelay_.lastOut() ) ) ) ) ) );
 

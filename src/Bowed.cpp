@@ -49,8 +49,8 @@ Bowed :: Bowed( StkFloat lowestFrequency )
   bowDown_ = false;
   maxVelocity_ = 0.25;
 
-  vibrato_.setFrequency( 6.12723 );
-  vibratoGain_ = 0.0;
+  vibrato_.setFrequency( 5.12723 );
+  vibratoGain_ = 0.5 * ONE_OVER_128;
 
   stringFilter_.setPole( 0.75 - (0.2 * 22050.0 / Stk::sampleRate()) );
   stringFilter_.setGain( 0.95 );
@@ -68,6 +68,7 @@ Bowed :: Bowed( StkFloat lowestFrequency )
   bodyFilters_[5].setCoefficients( 1.0, -1.9800, 0.9888, -1.9867, 0.9923 );
 
   adsr_.setAllTimes( 0.02, 0.005, 0.9, 0.01 );
+  adsr_vibrato_.setAllTimes( 0.75, 0.5, 100, 0.2 );
     
   betaRatio_ = 0.127236;
 
@@ -114,7 +115,11 @@ void Bowed :: startBowing( StkFloat amplitude, StkFloat rate )
   adsr_.setAttackRate( rate );
   adsr_.keyOn();
   maxVelocity_ = 0.03 + ( 0.2 * amplitude );
+  adsr_.setTarget( maxVelocity_ );
   bowDown_ = true;
+
+  adsr_vibrato_.setValue(0.0);
+  adsr_vibrato_.keyOn();
 }
 
 void Bowed :: stopBowing( StkFloat rate )
@@ -126,6 +131,8 @@ void Bowed :: stopBowing( StkFloat rate )
 
   adsr_.setReleaseRate( rate );
   adsr_.keyOff();
+
+  adsr_vibrato_.keyOff();
 }
 
 void Bowed :: noteOn( StkFloat frequency, StkFloat amplitude )
@@ -137,6 +144,7 @@ void Bowed :: noteOn( StkFloat frequency, StkFloat amplitude )
 void Bowed :: noteOff( StkFloat amplitude )
 {
   this->stopBowing( (1.0 - amplitude) * 0.005 );
+  adsr_.setTarget( 0 );
 }
 
 void Bowed :: controlChange( int number, StkFloat value )
@@ -160,15 +168,15 @@ void Bowed :: controlChange( int number, StkFloat value )
     neckDelay_.setDelay( baseDelay_ * (1.0 - betaRatio_) );
   }
   else if ( number == __SK_ModFrequency_ ) // 11
-    vibrato_.setFrequency( normalizedValue * 12.0 );
+    vibrato_.setFrequency( normalizedValue * 1.0 );
   else if ( number == __SK_ModWheel_ ) // 1
-    vibratoGain_ = ( normalizedValue * 0.4 );
+    vibratoGain_ = ( normalizedValue * 0.1 );
   else if ( number == 100 ) // 100: set instantaneous bow velocity
     adsr_.setTarget( normalizedValue );
-	else if ( number == 101 ) // 101: set instantaneous value of frequency
-		this->setFrequency( value );	  
+  else if ( number == 101 ) // 101: set instantaneous value of frequency
+    this->setFrequency( value );	  
   else if (number == __SK_AfterTouch_Cont_) // 128
-    adsr_.setTarget( normalizedValue );
+	vibratoGain_ = ( normalizedValue * 0.01 );
 #if defined(_STK_DEBUG_)
   else {
     oStream_ << "Bowed::controlChange: undefined control number (" << number << ")!";
