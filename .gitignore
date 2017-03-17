@@ -186,3 +186,14 @@ src/libstk.a
 src/Release
 src/Debug
 src/Makefile
+
+# Visual Studio/C++
+*.vcxproj*
+*.pdb
+*.ilk
+*.exe
+UpgradeLog*.htm
+*.opensdf
+*.sln
+*.suo
+*.sdf
